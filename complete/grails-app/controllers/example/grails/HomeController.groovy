@@ -18,13 +18,13 @@ class HomeController {
     }
 
     String loggedUsername() {
-        if ( springSecurityService.principal == null ) {
+        if (springSecurityService.principal == null) {
             return null
         }
-        if ( springSecurityService.principal instanceof String ) {
+        if (springSecurityService.principal instanceof String) {
             return springSecurityService.principal
         }
-        if ( springSecurityService.principal instanceof GrailsUser ) {
+        if (springSecurityService.principal instanceof GrailsUser) {
             return ((GrailsUser) springSecurityService.principal).username
         }
         null

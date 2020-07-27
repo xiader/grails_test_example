@@ -1,6 +1,8 @@
 package example.grails
 
+import grails.plugin.springsecurity.SpringSecurityService
 import grails.plugin.springsecurity.annotation.Secured
+import grails.plugin.springsecurity.userdetails.GrailsUser
 import grails.validation.ValidationException
 import org.grails.web.json.JSONObject
 
@@ -10,6 +12,8 @@ import static org.springframework.http.HttpStatus.*
 class TableController {
 
     TableService tableService
+
+    SpringSecurityService springSecurityService
 
     JsonManagerService jsonManagerService
 
@@ -23,7 +27,7 @@ class TableController {
         params.max = Math.min(max ?: 10, 100)
         def resp = jsonManagerService.getAllAdapt()
         respond resp
-       //respond tableService.list(params), model:[tableCount: tableService.count()]
+        //respond tableService.list(params), model:[tableCount: tableService.count()]
     }
 
     def show(Long id) {
@@ -35,16 +39,19 @@ class TableController {
     }
 
     def save() {
-     /*   if (object == null) {
-            notFound()
-            return
-        }*/
-        println ()
+        if (isAdmin()) {
+
+
+        /*   if (object == null) {
+               notFound()
+               return
+           }*/
+        println()
         try {
             def json = jsonManagerService.parseJson(request.getJSON() as JSONObject)
             respond json
         } catch (ValidationException e) {
-           // respond object.errors, view:'create'
+            // respond object.errors, view:'create'
             return
         }
 
@@ -55,6 +62,9 @@ class TableController {
 //            }
 //            '*' { respond table, [status: CREATED] }
 //        }
+        } else {
+           return denied()
+        }
     }
 
     def edit(Long id) {
@@ -98,7 +108,7 @@ class TableController {
                 flash.message = message(code: 'default.updated.message', args: [message(code: 'table.label', default: 'Table'), table.id])
                 redirect table
             }
-            '*'{ respond table, [status: OK] }
+            '*' { respond table, [status: OK] }
         }
     }
 
@@ -114,9 +124,9 @@ class TableController {
         request.withFormat {
             form multipartForm {
                 flash.message = message(code: 'default.deleted.message', args: [message(code: 'table.label', default: 'Table'), id])
-                redirect action:"index", method:"GET"
+                redirect action: "index", method: "GET"
             }
-            '*'{ render status: NO_CONTENT }
+            '*' { render status: NO_CONTENT }
         }
     }
 
@@ -126,7 +136,20 @@ class TableController {
                 flash.message = message(code: 'default.not.found.message', args: [message(code: 'table.label', default: 'Table'), params.id])
                 redirect action: "index", method: "GET"
             }
-            '*'{ render status: NOT_FOUND }
+            '*' { render status: NOT_FOUND }
         }
+    }
+
+    boolean isAdmin() {
+        if (springSecurityService.principal == null) {
+            return false
+        }
+        if (springSecurityService.principal instanceof String) {
+            return springSecurityService.principal == 'admin'
+        }
+        if (springSecurityService.principal instanceof GrailsUser) {
+            return ((GrailsUser) springSecurityService.principal).username == 'admin'
+        }
+        null
     }
 }
